@@ -19,16 +19,16 @@ class RegisterView(APIView):
                 return Response({
                     'result': '用户名已存在'
                 })
-            user= User.objects.create_user(user = username, password= password)
-            userprofile = UserProfile.objects.create(user=user)
+            user= User.objects.create_user(username = username, password= password)
+            user_profile = UserProfile.objects.create(user=user)
             refresh = RefreshToken.for_user(user)
             response = Response({
                 'result': 'success',
                 'access': str(refresh.access_token),
                 'user_id': user.id,
                 'username': user.username,
-                'photo': userprofile.photo.url,
-                'profile': userprofile.profile,
+                'photo': user_profile.photo.url,
+                'profile': user_profile.profile,
             })
             response.set_cookie(
                 key='refresh_token',
