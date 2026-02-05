@@ -24,7 +24,6 @@ async function handleLogout(){
       })
     }
   }catch(err) {
-    console.log(err)
   }
 }
 
@@ -37,7 +36,7 @@ async function handleLogout(){
         <img :src="user.photo" alt="">
       </div>
     </div>
-    <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-lg">
+    <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-1 w-48 p-2 shadow-lg">
       <li>
         <RouterLink @click="closeMenu" :to="{name:'user-space-index', params:{user_id:user.id}}">
           <div class="avatar">
@@ -45,7 +44,7 @@ async function handleLogout(){
               <img :src="user.photo" alt="">
             </div>
           </div>
-          <span class="text-lg font-bold line-clamp-1"> {{user.username}} </span>
+          <span class="text-lg font-bold line-clamp-1 break-all"> {{user.username}} </span>
         </RouterLink>
       </li>
       <li>
