@@ -52,11 +52,10 @@ function onFileChange(e){
   }
   reader.readAsDataURL(file)
 }
+
 onBeforeUnmount(() => {  // 释放croppie对象，防止内存泄漏
   croppie?.destroy()
 })
-
-
 
 defineExpose({
   myBackgroundImage,
