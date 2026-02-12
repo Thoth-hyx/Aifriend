@@ -27,7 +27,7 @@ class UpdateCharacterView(APIView):
                     'result':'角色介绍不能为空'
                 })
             if background_image:
-                remove_old_photo(background_image)
+                remove_old_photo(character.background_image)
                 character.background_image = background_image
             if photo:
                 remove_old_photo(character.photo)
