@@ -1,13 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 
 from web.models.friend import Friend
 from web.models.user import UserProfile
 
 
 class GetOrCreateFriendView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     def post(self,request):
         try:
             character_id = request.data['character_id']
@@ -22,7 +22,7 @@ class GetOrCreateFriendView(APIView):
             author = character.author
             return Response({
                 'result':'success',
-                'friend':{
+                'friend': {
                     'id' :friend.id,
                     'character':{
                         'id' :character.id,
@@ -36,9 +36,8 @@ class GetOrCreateFriendView(APIView):
                             'photo':author.photo.url,
                         }
                     }
-                },
+                }
             })
-
         except:
             return Response({
                 'result':'系统异常,请稍后重试'
