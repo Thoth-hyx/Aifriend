@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from web.models.friend import Friend
 
-
 class GetListFriendView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request):
