@@ -7,6 +7,7 @@ import streamApi from "@/js/http/streamApi.js";
 
 
 const props = defineProps(['friendId'])
+const emit = defineEmits(['pushBackMessage', 'addToLastMessage'])
 const inputRef = useTemplateRef('input-ref')
 const message = ref('')
 let isProcessing = false
@@ -23,6 +24,9 @@ async function handleSend(){
   if(!content) return
   message.value = ''
 
+  emit('pushBackMessage',{role: 'user', content: content, id: crypto.randomUUID()})
+  emit('pushBackMessage',{role: 'ai', content: '', id: crypto.randomUUID()})
+
   try{
     await streamApi('/api/friend/message/chat/',{
       body:{
@@ -33,15 +37,16 @@ async function handleSend(){
         if(isDone){
           isProcessing = false
         }else if(data.content){
-          console.log(data.content)
+          emit('addToLastMessage', data.content)
         }
       },
       onerror(err){
         isProcessing = false
-      }
+      },
     })
   }catch(err){
     console.log(err)
+    isProcessing = false
   }
 }
 
@@ -56,7 +61,7 @@ defineExpose({
     <input
         ref="input-ref"
         v-model="message"
-        class="input bg-black/30 backdrop-blur-sm text-white text-base w-full h-full rounded-2xl"
+        class="input bg-black/30 backdrop-blur-sm text-white text-base w-full h-full rounded-2xl pr-20"
         type="text"
         placeholder="文本输入..."
     />
