@@ -45,7 +45,6 @@ async function handleSend(){
       },
     })
   }catch(err){
-    console.log(err)
     isProcessing = false
   }
 }

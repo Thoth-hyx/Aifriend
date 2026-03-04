@@ -36,7 +36,6 @@ async function loadMore(){
       newMessages = data.messages
     }
   }catch(err){
-    console.log(err)
   }finally {
     isLoading = false
 
@@ -106,7 +105,7 @@ defineExpose({
 
 <template>
   <div ref="scroll-ref" class="absolute top-18 left-0 w-90 h-112 overflow-y-scroll no-scrollbar">
-    <div ref="sentinel-ref" class="h-2 bg-red-500"></div>
+    <div ref="sentinel-ref" class="h-2"></div>
     <Message
         v-for="message in history"
         :key="message.id"
