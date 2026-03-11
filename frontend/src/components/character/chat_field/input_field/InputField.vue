@@ -23,7 +23,7 @@ async function handleSend(event,audio_msg){
   if(audio_msg){
     content = audio_msg.trim()
   }else {
-    const content = message.value.trim()
+    content = message.value.trim()
   }
   if(!content) return
 
