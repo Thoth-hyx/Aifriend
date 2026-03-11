@@ -21,7 +21,7 @@ function focus(){
 async function handleSend(event,audio_msg){
   let content
   if(audio_msg){
-    content = audio_msg.tirm()
+    content = audio_msg.trim()
   }else {
     const content = message.value.trim()
   }
