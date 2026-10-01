@@ -3,6 +3,8 @@
 import {nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef} from "vue";
 import api from "@/js/http/api.js";
 import Character from "@/components/character/Character.vue";
+import InviteToGroup from './InviteToGroup.vue';
+const inviteRef = useTemplateRef('invite-ref')
 
 const friends = ref([])
 const isLoading = ref(false)
@@ -77,19 +79,21 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col items-center mb-12">
     <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-9 mt-12 justify-items-center w-full px-9">
+      <div v-for="friend in friends" :key="friend.id">
       <Character
-        v-for="friend in friends"
-        :key="friend.id"
         :character="friend.character"
         :canRemoveFriend="true"
         :friendId="friend.id"
         @remove="removeFriend"
       />
+      <button class="btn btn-outline btn-sm w-60 mt-3" @click="inviteRef.open(friend.character)">邀请加入群聊</button>
+      </div>
     </div>
 
     <div ref="sentinel-ref" class="h-2 mt-8"></div>
     <div v-if="isLoading" class="text-gray-500 mt-4">加载中...</div>
     <div v-else-if="!hasFriends" class="text-gray-500 mt-4">没有更多好友了</div>
+    <InviteToGroup ref="invite-ref" />
   </div>
 </template>
 

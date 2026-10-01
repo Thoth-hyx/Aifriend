@@ -9,10 +9,17 @@ import SpaceIndex from "@/views/user/space/SpaceIndex.vue";
 import ProfileIndex from "@/views/user/profile/ProfileIndex.vue";
 import {useUserStore} from "@/stores/user.js";
 import UpdateCharacter from "@/views/create/character/UpdateCharacter.vue";
+import GroupIndex from '@/views/group/GroupIndex.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/group/:group_id?/',
+      component: GroupIndex,
+      name: 'group-index',
+      meta: { needLogin: true },
+    },
     {
       path:'/',
       component:HomepageIndex,

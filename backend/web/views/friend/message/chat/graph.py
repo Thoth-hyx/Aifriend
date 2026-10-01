@@ -16,7 +16,7 @@ from web.documents.utils.custom_embeddings import CustomEmbeddings
 
 class ChatGraph:
     @staticmethod
-    def create_app():
+    def create_app(timeout=None):
         @tool
         def get_time() -> str:
             """当需要查询精确时间时，调用此函数。返回格式是：[年-月-日，时:分:秒]"""
@@ -39,6 +39,7 @@ class ChatGraph:
         tools = [get_time, search_knowledge_base]
 
         llm = ChatOpenAI(
+            **({'timeout': timeout, 'max_retries': 1} if timeout is not None else {}),
             model="deepseek-v3.2",
             openai_api_key=os.getenv('API_KEY'),
             openai_api_base=os.getenv('API_BASE'),

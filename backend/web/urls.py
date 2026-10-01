@@ -21,8 +21,13 @@ from web.views.user.account.refresh_token import RefreshTokenView
 from web.views.user.account.register import RegisterView
 from web.views.index import index
 from web.views.user.profile.update import UpdateProfileView
+from web.views.group import GroupListView, GroupCharacterView, GroupMessageView, GroupRetryView
 
 urlpatterns = [
+    path('api/groups/', GroupListView.as_view()),
+    path('api/groups/<int:group_id>/characters/', GroupCharacterView.as_view()),
+    path('api/groups/<int:group_id>/messages/', GroupMessageView.as_view()),
+    path('api/groups/<int:group_id>/messages/<int:message_id>/retry/', GroupRetryView.as_view()),
     path('api/user/account/login/',LoginView.as_view()),
     path('api/user/account/logout/',LogoutView.as_view()),
     path('api/user/account/register/',RegisterView.as_view()),

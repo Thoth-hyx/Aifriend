@@ -1351,3 +1351,81 @@ Django 通过模板 `backend/web/templates/index.html` 和 fallback 路由承载
 
 - 本文档没有读取 `.env`。
 - 生产环境中 Django `SECRET_KEY`、`DEBUG`、`ALLOWED_HOSTS`、数据库配置也应该改成环境变量管理。
+
+## 13. AI 会话式 IM / 私有群聊
+
+侧边栏新增“群聊”入口。每个群聊属于当前登录用户，用户可在好友页面点击“邀请加入群聊”，选择已有群聊或新建群聊，将自己的 AI 好友加入。
+
+- 未指定角色时，服务端随机选择群内一个角色回复；也可在输入区指定单个角色。
+- 会话列表显示角色和最近消息；每个会话独立保存当前页面内的草稿、消息缓存、滚动位置与同步游标。
+- 用户消息支持发送中、已发送、发送失败及重试；AI 回复支持等待、生成中、完成、失败及重试。
+- 消息先入库，回复任务由独立 worker 执行。切换会话、关闭页面或断线不影响后台生成。
+- 群聊消息与原有单聊记录分开保存。本版为当前用户与多个 AI 的私有群聊，不包含真人成员、语音、长期记忆升级。
+
+### 13.1 启动
+
+后端需应用新增迁移，并在两个终端分别启动 HTTP 服务与后台任务：
+
+```bash
+cd backend
+python manage.py migrate
+python manage.py runserver 127.0.0.1:8000
+```
+
+```bash
+cd backend
+python manage.py run_group_worker
+```
+
+worker 复用原有 `API_KEY`、`API_BASE` 与 ChatGraph 工具，只生成文字，无需 TTS 连接。未启动 worker 时，已入库的回复保持“等待回复”，启动后自动处理。
+
+本地前端可通过环境变量覆盖原来的云端 API 地址。PowerShell 示例：
+
+```powershell
+cd frontend
+$env:VITE_API_URL = 'http://127.0.0.1:8000'
+npm run dev -- --host 127.0.0.1
+```
+
+访问 `http://127.0.0.1:5173`，与后端使用相同主机名。未设置环境变量时仍使用原来的平台配置。可选 `VITE_VAD_URL` 可覆盖原有语音资源地址。
+
+### 13.2 状态与断线补偿
+
+`ChatGroup` 保存拥有者、角色列表和递增 revision；`GroupMessage` 一条记录表示一次发言，并保存角色、回复目标、状态、生成尝试编号和 revision。
+
+- 活动会话约每秒请求一次增量消息，列表约每五秒刷新；首次进入或完整刷新从 revision 0 同步。
+- 回复内容及状态更新也递增 revision，断线补拉能够恢复旧消息的新内容，非仅补拉新增消息。
+- 每页最多同步 100 条更新，客户端按服务端消息 ID 合并、按消息 ID 排序，忽略旧 revision，避免重复显示或内容回退。
+- 客户端 UUID 配合数据库唯一约束去重，发送结果未知时使用原 UUID 重试。相同 UUID 携带不同内容或不同指定角色返回 409。
+- worker 按队列处理，同群同时最多生成一条回复；上下文截止到触发消息，后发问题不会混入当前回复。历史上下文最多 40 条、约 12,000 字符，不读取旧 Friend.memory。
+- worker 约每 300ms 保存一次文本快照；生成尝试编号阻止旧任务覆盖重试后的结果。长时间没有更新的生成任务会在 worker 扫描时标记失败，允许人工重试，不自动重复调用模型。
+
+当前实现复用 SQLite 和 HTTP 增量轮询，无需新增 Redis、WebSocket 服务或任务队列依赖。一个 worker 顺序处理任务；当实际队列等待时间或同步流量成为瓶颈时，再扩展并发与推送。轮询被浏览器节流时同步延迟会增加，但数据库中的任务与消息仍保留。
+
+### 13.3 新增 API
+
+所有接口要求 JWT 登录，且仅允许操作自己的群聊。
+
+| 接口 | 用途 |
+| --- | --- |
+| `GET /api/groups/` | 获取会话列表、角色及最近消息 |
+| `POST /api/groups/` | 以 `name` 创建空群聊 |
+| `POST /api/groups/<id>/characters/` | 以 `character_id` 邀请好友角色，重复邀请幂等 |
+| `GET /api/groups/<id>/messages/?after_revision=0` | 增量同步，返回 `cursor` 和 `has_more` |
+| `POST /api/groups/<id>/messages/` | 提交 `content`、`client_message_id`，可选 `character_id`；返回用户消息及 AI 占位消息 |
+| `POST /api/groups/<id>/messages/<message_id>/retry/` | 重试失败的 AI 回复，保留消息 ID |
+
+### 13.4 验证
+
+```bash
+cd backend
+python manage.py test web.test_group_im
+```
+
+```bash
+cd frontend
+node --test --test-isolation=none src/js/groupMessages.test.js
+npm run build
+```
+
+后端测试使用独立测试数据库并模拟模型输出，覆盖角色选择、权限、重复发送、状态补偿、分页、上下文隔离、失败重试和旧任务隔离；前端测试覆盖重连合并、乱序快照和发送确认丢失后的去重。
