@@ -6,9 +6,10 @@ import RemoveIcon from "@/components/character/icons/RemoveIcon.vue";
 import api from "@/js/http/api.js";
 import ChatField from "@/components/character/chat_field/ChatField.vue";
 import {useRouter} from "vue-router";
+import GroupIcon from '@/components/navbar/icons/GroupIcon.vue';
 
-const props = defineProps(['character','canEdit','canRemoveFriend','friendId'])
-const emit = defineEmits(['remove'])
+const props = defineProps(['character','canEdit','canRemoveFriend','friendId','canInviteGroup'])
+const emit = defineEmits(['remove', 'invite'])
 const isHover =ref(false)
 const user = useUserStore()
 const router = useRouter()
@@ -76,9 +77,12 @@ async function openChatField(){
             <RemoveIcon />
           </button>
         </div>
-        <div v-if="canRemoveFriend" class="absolute right-0 top-50">
-          <button @click.stop="handleRemoveFriend" class="btn btn-circle btn-ghost bg-transparent">
+        <div v-if="canRemoveFriend || canInviteGroup" class="absolute right-0 top-50 flex flex-col gap-2">
+          <button v-if="canRemoveFriend" @click.stop="handleRemoveFriend" class="btn btn-circle btn-ghost bg-transparent" aria-label="删除好友" title="删除好友">
             <RemoveIcon />
+          </button>
+          <button v-if="canInviteGroup" @click.stop="emit('invite', character)" class="btn btn-circle btn-ghost bg-transparent text-white" aria-label="邀请加入群聊" title="邀请加入群聊">
+            <GroupIcon />
           </button>
         </div>
         <div class="absolute left-4 top-54 avatar">

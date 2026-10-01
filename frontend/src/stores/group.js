@@ -103,5 +103,18 @@ export const useGroupStore = defineStore('group', () => {
     }
   }
 
-  return { groups, session, loadGroups, sync, send, retry, errorText }
+  async function removeCharacter(id, characterId) {
+    const currentEpoch = epoch
+    const { data } = await api.delete(`/api/groups/${id}/characters/`, {
+      data: { character_id: characterId }, timeout: 10000,
+    })
+    if (currentEpoch !== epoch) return
+    listRequest++ // Ignore list snapshots requested before the removal completed.
+    groups.value = groups.value.map(group => group.id === id ? data.group : group)
+    const state = session(id)
+    if (Number(state.target) === characterId) state.target = ''
+    await sync(id)
+  }
+
+  return { groups, session, loadGroups, sync, send, retry, removeCharacter, errorText }
 })

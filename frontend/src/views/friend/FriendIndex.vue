@@ -83,10 +83,11 @@ onBeforeUnmount(() => {
       <Character
         :character="friend.character"
         :canRemoveFriend="true"
+        :canInviteGroup="true"
         :friendId="friend.id"
         @remove="removeFriend"
+        @invite="inviteRef.open"
       />
-      <button class="btn btn-outline btn-sm w-60 mt-3" @click="inviteRef.open(friend.character)">邀请加入群聊</button>
       </div>
     </div>
 

@@ -62,21 +62,21 @@ defineExpose({ open })
 
 <template>
   <dialog ref="dialog" class="modal">
-    <form class="modal-box max-w-md" @submit.prevent="invite">
+    <form class="modal-box max-w-md rounded-2xl" @submit.prevent="invite">
       <h2 class="text-xl font-bold">邀请 {{ character?.name }} 加入群聊</h2>
       <label class="block mt-5 mb-2" for="invite-group">选择群聊</label>
-      <select id="invite-group" v-model="selected" class="select w-full" :disabled="busy">
+      <select id="invite-group" v-model="selected" class="select w-full rounded-2xl" :disabled="busy">
         <option value="new">新建群聊</option>
         <option v-for="group in groups" :key="group.id" :value="String(group.id)">{{ group.name }}</option>
       </select>
       <label v-if="selected === 'new'" class="block mt-4">
         群聊名称
-        <input v-model="name" class="input w-full mt-2" maxlength="50" :disabled="busy" required />
+        <input v-model="name" class="input w-full mt-2 rounded-2xl" maxlength="50" :disabled="busy" required />
       </label>
       <p v-if="error" class="text-error mt-3" role="alert">{{ error }}</p>
       <div class="modal-action">
-        <button type="button" class="btn btn-ghost" :disabled="busy" @click="dialog.close()">取消</button>
-        <button class="btn btn-primary" :disabled="busy || !name.trim()">{{ busy ? '处理中…' : '邀请并进入群聊' }}</button>
+        <button type="button" class="btn btn-ghost rounded-full" :disabled="busy" @click="dialog.close()">取消</button>
+        <button class="btn btn-success rounded-full" :disabled="busy || (selected === 'new' && !name.trim())">{{ busy ? '处理中…' : '邀请并进入群聊' }}</button>
       </div>
     </form>
   </dialog>

@@ -35,6 +35,7 @@ def message_data(message):
     return {
         'id': message.id, 'group_id': message.group_id, 'role': message.role,
         'character_id': message.character_id, 'sender_name': message.sender_name,
+        'sender_photo': message.character.photo.url if message.role == 'ai' and message.character and message.character.photo else '',
         'content': message.content, 'status': message.status,
         'client_message_id': str(message.client_message_id) if message.client_message_id else None,
         'reply_to': message.reply_to_id, 'revision': message.revision,
@@ -43,7 +44,7 @@ def message_data(message):
 
 
 def group_data(group):
-    latest = group.messages.order_by('-id').first()
+    latest = group.messages.select_related('character').order_by('-id').first()
     return {
         'id': group.id, 'name': group.name, 'revision': group.revision,
         'characters': [character_data(c) for c in group.characters.all()],
@@ -95,6 +96,23 @@ class GroupCharacterView(APIView):
         group.save(update_fields=['update_time'])
         return Response({'result': 'success', 'group': group_data(group)})
 
+    @transaction.atomic
+    def delete(self, request, group_id):
+        group = owned_group(request, group_id, write=True)
+        character_id = integer(request.data.get('character_id'), '角色')
+        # Only remove the membership; Friend, Character and history stay intact.
+        group.characters.remove(character_id)
+        for message in group.messages.filter(character_id=character_id, role='ai', status__in=['pending', 'generating']):
+            message.status = 'failed'
+            message.error = '角色已移出群聊，回复已停止'
+            message.revision = bump_revision(group.pk)
+            message.update_time = now()
+            message.save(update_fields=['status', 'error', 'revision', 'update_time'])
+        group.update_time = now()
+        group.save(update_fields=['update_time'])
+        group.refresh_from_db(fields=['revision'])
+        return Response({'result': 'success', 'group': group_data(group)})
+
 
 class GroupMessageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -105,7 +123,7 @@ class GroupMessageView(APIView):
         if cursor > group.revision:
             raise ValidationError({'result': '同步游标已失效，请重新加载会话'})
         # Fix a high watermark. Later updates are fetched on the next request.
-        messages = list(group.messages.filter(revision__gt=cursor, revision__lte=group.revision).order_by('revision', 'id')[:100])
+        messages = list(group.messages.select_related('character').filter(revision__gt=cursor, revision__lte=group.revision).order_by('revision', 'id')[:100])
         next_cursor = messages[-1].revision if len(messages) == 100 else group.revision
         return Response({
             'result': 'success', 'messages': [message_data(m) for m in messages],
@@ -129,7 +147,7 @@ class GroupMessageView(APIView):
         if previous:
             if previous.content != content or previous.character_id != target_id:
                 return Response({'result': '同一消息标识不能用于不同内容'}, status=409)
-            replies = group.messages.filter(reply_to=previous).order_by('id')
+            replies = group.messages.select_related('character').filter(reply_to=previous).order_by('id')
             return Response({'result': 'success', 'messages': [message_data(previous)] + [message_data(m) for m in replies]})
         characters = list(group.characters.all().order_by('id'))
         if not characters:
@@ -159,6 +177,8 @@ class GroupRetryView(APIView):
         message = get_object_or_404(GroupMessage, pk=message_id, group=group, role='ai')
         if not message.character_id:
             raise ValidationError({'result': '角色已被删除，无法重试'})
+        if not group.characters.filter(pk=message.character_id).exists():
+            raise ValidationError({'result': '角色已移出群聊，请重新邀请后再重试'})
         revision = bump_revision(group.pk)
         changed = GroupMessage.objects.filter(pk=message.pk, status='failed').update(
             status='pending', content='', error='', revision=revision, update_time=now(),
