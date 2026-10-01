@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from datetime import timedelta
+from threading import Event
 
 from django.db import close_old_connections, transaction
 from django.db.models import F, Subquery
@@ -14,6 +15,25 @@ from web.views.friend.message.chat.graph import ChatGraph
 from web.views.group import bump_revision
 
 logger = logging.getLogger(__name__)
+
+
+def run_worker(stop_event=None, once=False):
+    stop_event = stop_event if stop_event is not None else Event()
+    # ponytail: one worker processes replies serially; add workers when queue latency matters.
+    try:
+        while not stop_event.is_set():
+            try:
+                recover_stale()
+                processed = process_next()
+            except Exception:
+                logger.exception('AI group worker iteration failed')
+                processed = False
+            if once:
+                break
+            if not processed:
+                stop_event.wait(1)
+    finally:
+        close_old_connections()
 
 
 def save_reply(message, status, content, error='', stale_before=None):

@@ -1,8 +1,6 @@
-import time
-
 from django.core.management.base import BaseCommand
 
-from web.views.group_worker import process_next, recover_stale
+from web.views.group_worker import run_worker
 
 
 class Command(BaseCommand):
@@ -13,14 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('AI group worker started. Press Ctrl+C to stop.')
-        # ponytail: one worker processes replies serially; add workers when queue latency matters.
         try:
-            while True:
-                recover_stale()
-                processed = process_next()
-                if options['once']:
-                    break
-                if not processed:
-                    time.sleep(1)
+            run_worker(once=options['once'])
         except KeyboardInterrupt:
             self.stdout.write('AI group worker stopped.')
