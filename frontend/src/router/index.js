@@ -12,7 +12,7 @@ import UpdateCharacter from "@/views/create/character/UpdateCharacter.vue";
 import GroupIndex from '@/views/group/GroupIndex.vue';
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory('/'),
   routes: [
     {
       path: '/group/:group_id?/',

@@ -15,7 +15,7 @@ import CONFIG_API from "@/js/config/config.js";
 const BASE_URL = CONFIG_API.HTTP_URL
 
 const api = axios.create({
-    baseURL: BASE_URL,
+    baseURL: BASE_URL || '/',
     withCredentials: true,
 })
 
