@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { replyBubbles, replaceReply, updateReply } from '../frontend/src/js/replyMessages.js'
+import { replyBubbles, appendReplyPart } from '../frontend/src/js/replyMessages.js'
 import { mergeMessages } from '../frontend/src/js/groupMessages.js'
 
 test('completed group replies show separate bubbles, partial replies stay in one bubble', () => {
@@ -14,12 +14,21 @@ test('completed group replies show separate bubbles, partial replies stay in one
   assert.equal(replyBubbles(recovered[0]).length, 3)
 })
 
-test('private replies target their own placeholder and repeated completion is idempotent', () => {
+test('private streaming replies append stable bubbles beside their own placeholder', () => {
   const messages = [{ id: 'a', role: 'ai', content: '' }, { id: 'u', role: 'user', content: '新问题' }, { id: 'b', role: 'ai', content: '' }]
-  updateReply(messages, 'a', '旧问题的回答')
+  const firstBubble = messages[0]
+  appendReplyPart(messages, 'a', 0, '第一条。')
   assert.equal(messages[2].content, '')
-  for (let i = 0; i < 2; i++) replaceReply(messages, 'a', ['第一条', '第二条', '第三条'])
-  assert.deepEqual(messages.map(m => m.content), ['第一条', '第二条', '第三条', '新问题', ''])
-  replaceReply(messages, 'missing', ['忽略'])
+  appendReplyPart(messages, 'a', 1, '第二')
+  const secondBubble = messages[1]
+  assert.strictEqual(messages[0], firstBubble)
+  assert.equal(firstBubble.content, '第一条。')
+  appendReplyPart(messages, 'a', 1, '条。')
+  assert.strictEqual(messages[1], secondBubble)
+  appendReplyPart(messages, 'a', 2, '第三条。第四条。')
+  assert.deepEqual(messages.map(m => m.content), ['第一条。', '第二条。', '第三条。第四条。', '新问题', ''])
+  assert.deepEqual(messages.map(m => m.id), ['a', 'a:1', 'a:2', 'u', 'b'])
+  for (const invalid of [-1, 3, null, '1']) appendReplyPart(messages, 'a', invalid, '忽略')
+  appendReplyPart(messages, 'missing', 1, '忽略')
   assert.equal(messages.length, 5)
 })

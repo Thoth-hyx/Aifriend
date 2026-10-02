@@ -4,17 +4,19 @@ export function replyBubbles(message) {
   return parts.map((content, index) => ({ ...message, content, bubbleKey: `${message.id}:${index}` }))
 }
 
-export function updateReply(messages, id, delta) {
-  const message = messages.find(message => message.id === id)
-  if (message) message.content += delta
-}
-
-export function replaceReply(messages, id, parts) {
-  const index = messages.findIndex(message => message.id === id)
-  if (index < 0) return
-  const original = messages[index]
-  const count = messages.filter(message => message.id === id || message.reply_id === id).length
-  messages.splice(index, count, ...parts.map((content, i) => ({
-    ...original, id: i === 0 ? id : `${id}:${i}`, reply_id: id, content,
-  })))
+export function appendReplyPart(messages, id, partIndex, delta) {
+  if (!Number.isInteger(partIndex) || partIndex < 0 || partIndex > 2 || !delta) return
+  const bubbleId = partIndex === 0 ? id : `${id}:${partIndex}`
+  const existing = messages.find(message => message.id === bubbleId)
+  if (existing) {
+    existing.content += delta
+    return
+  }
+  const root = messages.findIndex(message => message.id === id)
+  if (root < 0) return
+  let index = root + 1
+  while (messages[index]?.reply_id === id && messages[index].part_index < partIndex) index++
+  messages.splice(index, 0, {
+    ...messages[root], id: bubbleId, reply_id: id, part_index: partIndex, content: delta,
+  })
 }

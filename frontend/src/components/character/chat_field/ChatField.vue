@@ -3,7 +3,7 @@ import {computed, nextTick, ref, useTemplateRef} from "vue";
 import InputField from "@/components/character/chat_field/input_field/InputField.vue";
 import CharacterPhotoField from "@/components/character/chat_field/character_photo_field/CharacterPhotoField.vue";
 import ChatHistory from "@/components/character/chat_field/chat_history/ChatHistory.vue";
-import { replaceReply, updateReply } from '@/js/replyMessages.js'
+import { appendReplyPart } from '@/js/replyMessages.js'
 
 const props = defineProps(['friend'])
 const modalRef = useTemplateRef('modal-ref')
@@ -36,13 +36,8 @@ function handlePushBackMessage(msg){
   chatHistoryRef.value.scrollToBottom()
 }
 
-function handleAddToMessage({id, content}){
-  updateReply(history.value, id, content)
-  chatHistoryRef.value.scrollToBottom()
-}
-
-function handleReplaceReply({id, parts}){
-  replaceReply(history.value, id, parts)
+function handleAddToMessage({id, partIndex, content}){
+  appendReplyPart(history.value, id, partIndex, content)
   chatHistoryRef.value.scrollToBottom()
 }
 
@@ -77,7 +72,6 @@ defineExpose({
           :friendId="friend.id"
           @pushBackMessage="handlePushBackMessage"
           @addToMessage="handleAddToMessage"
-          @replaceReply="handleReplaceReply"
       />
       <CharacterPhotoField v-if="friend" :character="friend.character" />
     </div>

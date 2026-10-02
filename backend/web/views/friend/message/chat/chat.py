@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from web.models.friend import Friend, Message, SystemPrompt
 from web.views.friend.message.chat.graph import ChatGraph
 from web.views.friend.message.memory.update import update_memory
-from web.views.utils.reply_parts import split_reply
+from web.views.utils.reply_parts import ReplyStream
 
 
 class SSERenderer(BaseRenderer):
@@ -172,13 +172,15 @@ class MessageChatView(APIView):
 
         full_output = ''
         full_usage = {}
+        reply = ReplyStream()
         while True:
             msg = mq.get()
             if not msg:
                 break
             if msg.get('content',None):
                 full_output += msg['content']
-                yield f'data:{json.dumps({'content': msg['content']}, ensure_ascii=False)}\n\n'
+                for part in reply.feed(msg['content']):
+                    yield f'data:{json.dumps(part, ensure_ascii=False)}\n\n'
             if msg.get('audio',None):
                 yield f'data:{json.dumps({'audio': msg['audio']}, ensure_ascii=False)}\n\n'
             if msg.get('usage',None):
@@ -199,7 +201,6 @@ class MessageChatView(APIView):
             output_tokens=output_tokens,
             total_tokens=total_tokens,
         )
-        yield f'data:{json.dumps({"reply_parts": split_reply(full_output)}, ensure_ascii=False)}\n\n'
         yield 'data: [DONE]\n\n'  # SSE定义的
         if Message.objects.filter(friend=friend).count() % 1 == 0:
             update_memory(friend)
