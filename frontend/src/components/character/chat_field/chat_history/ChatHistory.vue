@@ -46,11 +46,13 @@ async function loadMore(){
       const oldTop = scrollRef.value.scrollTop
 
       for(const m of newMessages){
-        emit('pushFrontMessage',{
-          role: 'ai',
-          content: m.output,
-          id: crypto.randomUUID(),
-        })
+        for(const part of [...(m.reply_parts ?? [m.output])].reverse()){
+          emit('pushFrontMessage',{
+            role: 'ai',
+            content: part,
+            id: crypto.randomUUID(),
+          })
+        }
         emit('pushFrontMessage',{
           role: 'user',
           content: m.user_message,

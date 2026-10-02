@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
 from web.models.friend import Message
+from web.views.utils.reply_parts import split_reply
 
 
 class GetHistoryView(APIView):
@@ -21,6 +22,7 @@ class GetHistoryView(APIView):
                     'id': m.id,
                     'user_message': m.user_message,
                     'output': m.output,
+                    'reply_parts': split_reply(m.output),
                 })
             return Response({
                 'result':'success',

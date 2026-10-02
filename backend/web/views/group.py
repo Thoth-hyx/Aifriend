@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from web.models.character import Character
 from web.models.friend import Friend
 from web.models.group import ChatGroup, GroupMessage
+from web.views.utils.reply_parts import split_reply
 
 
 def integer(value, name, minimum=1):
@@ -37,6 +38,7 @@ def message_data(message):
         'character_id': message.character_id, 'sender_name': message.sender_name,
         'sender_photo': message.character.photo.url if message.role == 'ai' and message.character and message.character.photo else '',
         'content': message.content, 'status': message.status,
+        'reply_parts': split_reply(message.content) if message.role == 'ai' and message.status == 'completed' else [],
         'client_message_id': str(message.client_message_id) if message.client_message_id else None,
         'reply_to': message.reply_to_id, 'revision': message.revision,
         'error': message.error, 'create_time': message.create_time.isoformat(),

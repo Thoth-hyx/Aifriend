@@ -6,6 +6,7 @@ import { useGroupStore } from '@/stores/group.js'
 import { useUserStore } from '@/stores/user.js'
 import GroupIcon from '@/components/navbar/icons/GroupIcon.vue'
 import SendIcon from '@/components/character/icons/SendIcon.vue'
+import { replyBubbles } from '@/js/replyMessages.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +15,7 @@ const user = useUserStore()
 const activeId = computed(() => Number(route.params.group_id) || null)
 const activeGroup = computed(() => store.groups.find(group => group.id === activeId.value))
 const state = computed(() => activeId.value ? store.session(activeId.value) : null)
+const bubbles = computed(() => (state.value?.messages || []).flatMap(replyBubbles))
 const scroll = useTemplateRef('scroll')
 const createDialog = useTemplateRef('create-dialog')
 const membersDialog = useTemplateRef('members-dialog')
@@ -245,7 +247,7 @@ onBeforeUnmount(() => {
             <p>{{ activeGroup.characters.length ? '发一条消息，开始和 AI 角色交流' : '群聊已创建，先邀请 AI 角色加入' }}</p>
             <RouterLink v-if="!activeGroup.characters.length" class="btn btn-sm rounded-full" :to="{ name: 'friend-index', query: { group_id: activeId } }">去好友页选择角色</RouterLink>
           </div>
-          <div v-for="message in state.messages" :key="message.id" class="chat" :class="message.role === 'user' ? 'chat-end' : 'chat-start'">
+          <div v-for="message in bubbles" :key="message.bubbleKey" class="chat" :class="message.role === 'user' ? 'chat-end' : 'chat-start'">
             <div class="chat-image avatar" :class="{ 'avatar-placeholder': !messagePhoto(message) }">
               <div class="w-10 rounded-full bg-base-300">
                 <img v-if="messagePhoto(message)" :src="messagePhoto(message)" :alt="`${message.sender_name}的头像`" />

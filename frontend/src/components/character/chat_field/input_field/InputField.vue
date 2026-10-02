@@ -8,7 +8,7 @@ import Microphone from "@/components/character/chat_field/input_field/Microphone
 
 
 const props = defineProps(['friendId'])
-const emit = defineEmits(['pushBackMessage', 'addToLastMessage'])
+const emit = defineEmits(['pushBackMessage', 'addToMessage', 'replaceReply'])
 const inputRef = useTemplateRef('input-ref')
 const message = ref('')
 let processId = 0
@@ -119,7 +119,8 @@ async function handleSend(event,audio_msg){
   message.value = ''
 
   emit('pushBackMessage',{role: 'user', content: content, id: crypto.randomUUID()})
-  emit('pushBackMessage',{role: 'ai', content: '', id: crypto.randomUUID()})
+  const replyId = crypto.randomUUID()
+  emit('pushBackMessage',{role: 'ai', content: '', id: replyId})
 
   try{
     await streamApi('/api/friend/message/chat/',{
@@ -131,7 +132,10 @@ async function handleSend(event,audio_msg){
         if(curId !== processId) return
 
         if(data.content){
-          emit('addToLastMessage', data.content)
+          emit('addToMessage', { id: replyId, content: data.content })
+        }
+        if(data.reply_parts){
+          emit('replaceReply', { id: replyId, parts: data.reply_parts })
         }
         if(data.audio){
           handleAudioChunk(data.audio)
