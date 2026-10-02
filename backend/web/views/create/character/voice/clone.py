@@ -14,7 +14,7 @@ from django.http import FileResponse, Http404
 from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -94,7 +94,7 @@ def provider_failure(data):
 
 
 class CloneVoiceView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):

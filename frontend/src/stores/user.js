@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user',()=>{
     const username = ref('')
     const photo = ref('')
     const profile = ref('')
+    const canCloneVoice = ref(false)
     const accessToken = ref('')
     const hasPulledUserInfo = ref(false)
 
@@ -23,6 +24,7 @@ export const useUserStore = defineStore('user',()=>{
         username.value = data.username
         photo.value = data.photo
         profile.value = data.profile
+        canCloneVoice.value = data.can_clone_voice === true
     }
 
     function logout(){
@@ -30,6 +32,7 @@ export const useUserStore = defineStore('user',()=>{
         username.value = ''
         photo.value = ''
         profile.value = ''
+        canCloneVoice.value = false
         accessToken.value = ''
     }
 
@@ -42,6 +45,7 @@ export const useUserStore = defineStore('user',()=>{
         username,
         photo,
         profile,
+        canCloneVoice,
         accessToken,
         setAccessToken,
         isLogin,

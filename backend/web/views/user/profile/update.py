@@ -41,6 +41,7 @@ class UpdateProfileView(APIView):
                 'result':'success',
                 'user_id':user.id,
                 'username':user.username,
+                'can_clone_voice': user.is_staff,
                 'profile':user_profile.profile,
                 'photo':user_profile.photo.url,
             })

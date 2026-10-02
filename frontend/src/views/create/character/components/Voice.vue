@@ -2,9 +2,11 @@
 import {onBeforeUnmount, ref, watch} from "vue";
 import api from '@/js/http/api.js'
 import { voiceUploadError } from '@/js/voiceUpload.js'
+import { useUserStore } from '@/stores/user.js'
 
 const props = defineProps(['voices', 'curVoiceId'])
 const emit = defineEmits(['voiceCreated'])
+const user = useUserStore()
 const myVoice = ref(props.curVoiceId)
 const audioFile = ref(null)
 const preview = ref('')
@@ -40,7 +42,7 @@ function inspectDuration(event) {
 }
 
 async function cloneVoice() {
-  if (cloning.value) return
+  if (!user.canCloneVoice || cloning.value) return
   errorMessage.value = voiceUploadError(audioFile.value, duration.value)
   if (!errorMessage.value && !voiceName.value.trim()) errorMessage.value = '请输入音色名称'
   if (errorMessage.value) return
@@ -68,7 +70,8 @@ async function cloneVoice() {
   } catch (error) {
     if (disposed) return
     const data = error.response?.data
-    errorMessage.value = data?.result || '请求结果未确认，请检查音色库后再决定是否重新提交'
+    errorMessage.value = error.response?.status === 403 ? '仅管理员可以复刻音色' :
+        data?.result || '请求结果未确认，请检查音色库后再决定是否重新提交'
     if (data?.provider_code) errorMessage.value += `（${data.provider_code}）`
     if (data?.request_id) errorMessage.value += `，请求 ID：${data.request_id}`
   } finally {
@@ -92,7 +95,7 @@ defineExpose({
   <fieldset class="fieldset">
     <label class="label text-base">音色</label>
     <select v-model="myVoice" class="select w-full" :disabled="cloning" aria-label="角色音色">
-      <option v-if="!voices.length" :value="null" disabled>暂无音色，可上传录音复刻</option>
+      <option v-if="!voices.length" :value="null" disabled>{{ user.canCloneVoice ? '暂无音色，可上传录音复刻' : '暂无可用音色' }}</option>
       <option
           v-for="voice in voices"
           :key="voice.id"
@@ -100,7 +103,7 @@ defineExpose({
           :value = "voice.id"
       >{{ voice.name }}{{ voice.is_custom ? '（我的复刻音色）' : '' }}</option>
     </select>
-    <details class="mt-2 rounded-xl border border-base-300 bg-base-100 p-3">
+    <details v-if="user.canCloneVoice" class="mt-2 rounded-xl border border-base-300 bg-base-100 p-3">
       <summary class="cursor-pointer text-sm font-medium">上传音频复刻音色</summary>
       <div class="mt-3 flex flex-col gap-3">
         <p class="text-xs text-base-content/60">支持 WAV（16bit）、MP3、M4A，文件不超过 10 MB。建议 10～20 秒清晰朗读，至少 5 秒、最长 60 秒；采样率至少 16 kHz。</p>

@@ -25,6 +25,7 @@ class LoginView (APIView):
                     'access': str(refresh.access_token),
                     'user_id': user.id,
                     'username': user.username,
+                    'can_clone_voice': user.is_staff,
                     'photo': user_profile.photo.url,
                     'profile': user_profile.profile,
                 })

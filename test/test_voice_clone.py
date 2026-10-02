@@ -40,7 +40,7 @@ class VoiceCloneTests(unittest.TestCase):
 
             class FlowChecks(TestCase):
                 def setUp(self):
-                    self.user = User.objects.create_user(username='voice-owner')
+                    self.user = User.objects.create_user(username='voice-owner', is_staff=True)
                     self.other = User.objects.create_user(username='voice-other')
                     self.profile = UserProfile.objects.create(user=self.user)
                     UserProfile.objects.create(user=self.other)
@@ -104,7 +104,13 @@ class VoiceCloneTests(unittest.TestCase):
                     with patch('web.views.create.character.voice.clone.create_voice') as call:
                         self.client.force_authenticate(None)
                         checks.assertEqual(self.upload().status_code, 401)
+                        self.client.force_authenticate(self.other)
+                        checks.assertEqual(self.upload().status_code, 403)
+                        checks.assertEqual(self.client.get('/api/user/account/get_user_info/').data['can_clone_voice'], False)
+                        checks.assertEqual(list(root.glob('*')), [])
+                        checks.assertEqual(Voice.objects.count(), 2)
                         self.client.force_authenticate(self.user)
+                        checks.assertEqual(self.client.get('/api/user/account/get_user_info/').data['can_clone_voice'], True)
                         for name, audio in [
                             ('fake.wav', b'not audio'), ('wide.wav', wav_bytes(width=3)),
                             ('short.wav', wav_bytes(seconds=2)), ('low.wav', wav_bytes(rate=8000)),
@@ -176,6 +182,40 @@ class VoiceCloneTests(unittest.TestCase):
                     checks.assertEqual(character.voice, self.shared)
                     single = self.client.get('/api/create/character/get_single/', {'character_id': character.pk}).data
                     checks.assertEqual({v['id'] for v in single['voices']}, {self.shared.pk})
+
+                def test_account_capability_and_revoked_admin_token(self):
+                    for user in [self.user, self.other]:
+                        user.set_password('voice-test-password')
+                        user.save(update_fields=['password'])
+                        client = APIClient()
+                        login = client.post('/api/user/account/login/', {
+                            'username': user.username, 'password': 'voice-test-password',
+                        }, format='json').data
+                        checks.assertEqual(login['result'], 'success')
+                        checks.assertEqual(login['can_clone_voice'], user.is_staff)
+                        client.credentials(HTTP_AUTHORIZATION='Bearer ' + login['access'])
+                        checks.assertEqual(client.get('/api/user/account/get_user_info/').data['can_clone_voice'], user.is_staff)
+                        updated = client.post('/api/user/profile/update/', {
+                            'username': user.username, 'profile': 'profile',
+                        }, format='json').data
+                        checks.assertEqual(updated['result'], 'success')
+                        checks.assertEqual(updated['can_clone_voice'], user.is_staff)
+                        if user.is_staff:
+                            admin_token = login['access']
+                    registered = APIClient().post('/api/user/account/register/', {
+                        'username': 'new-voice-user', 'password': 'voice-test-password',
+                    }, format='json').data
+                    checks.assertEqual(registered['result'], 'success')
+                    checks.assertFalse(registered['can_clone_voice'])
+                    self.user.is_staff = False
+                    self.user.save(update_fields=['is_staff'])
+                    self.client.force_authenticate(None)
+                    self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + admin_token)
+                    with patch('web.views.create.character.voice.clone.create_voice') as call:
+                        checks.assertEqual(self.upload().status_code, 403)
+                        call.assert_not_called()
+                    checks.assertEqual(list(root.glob('*')), [])
+                    checks.assertEqual(Voice.objects.count(), 2)
 
             runner = DiscoverRunner(verbosity=0, interactive=False)
             runner.setup_test_environment()
