@@ -28,7 +28,7 @@ onMounted(async ()=>{
     const data = res.data
     if(data.result === 'success'){
       voices.value = data.voices
-      curVoiceId.value = data.voices[0].id
+      curVoiceId.value = data.voices[0]?.id ?? null
     }
   }catch(err){
     console.log(err)
@@ -36,6 +36,7 @@ onMounted(async ()=>{
 })
 
 async function handleCreate(){
+  if (voiceRef.value.cloning) return
   const photo = photoRef.value.myPhoto
   const name = nameRef.value.myName?.trim()
   const voice = voiceRef.value.myVoice
@@ -79,6 +80,11 @@ async function handleCreate(){
   }
 }
 
+function handleVoiceCreated(voice) {
+  voices.value = [...voices.value.filter(item => item.id !== voice.id), voice]
+  curVoiceId.value = voice.id
+}
+
 </script>
 
 <template>
@@ -88,14 +94,14 @@ async function handleCreate(){
         <h3 class="text-lg font-bold my-4">创建角色</h3>
         <Photo ref="photo-ref" />
         <Name ref="name-ref" />
-        <Voice ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId"/>
+        <Voice ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId" @voiceCreated="handleVoiceCreated"/>
         <Profile ref="profile-ref" />
         <BackgroundImage ref="background-image-ref" />
 
         <p v-if="errorMessage" class="text-sm text-red-500">{{errorMessage}}</p>
 
         <div class="flex justify-center">
-          <button @click="handleCreate" class="btn btn-neutral w-60 mt-2">创建</button>
+          <button @click="handleCreate" class="btn btn-neutral w-60 mt-2" :disabled="voiceRef?.cloning">创建</button>
         </div>
       </div>
     </div>

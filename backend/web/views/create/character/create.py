@@ -2,8 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from web.models.character import Character, Voice
+from web.models.character import Character
 from web.models.user import UserProfile
+from web.views.create.character.voice.get_list import visible_voices
 
 
 class CreateCharacterView(APIView):
@@ -34,7 +35,9 @@ class CreateCharacterView(APIView):
                 return Response({
                     'result':'头像不能为空'
                 })
-            voice = Voice.objects.get(id=voice_id)
+            voice = visible_voices(user).filter(id=voice_id).first()
+            if voice is None:
+                return Response({'result': '音色不存在或无权使用'}, status=400)
             Character.objects.create(
                 author = user_profile,
                 name = name,

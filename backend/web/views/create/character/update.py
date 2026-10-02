@@ -3,8 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from web.models.character import Character, Voice
+from web.models.character import Character
 from web.views.utils.photo import remove_old_photo
+from web.views.create.character.voice.get_list import visible_voices
 
 
 class UpdateCharacterView(APIView):
@@ -27,6 +28,9 @@ class UpdateCharacterView(APIView):
                 return Response({
                     'result':'角色介绍不能为空'
                 })
+            voice = visible_voices(request.user).filter(id=voice_id).first()
+            if voice is None:
+                return Response({'result': '音色不存在或无权使用'}, status=400)
             if background_image:
                 remove_old_photo(character.background_image)
                 character.background_image = background_image
@@ -34,7 +38,6 @@ class UpdateCharacterView(APIView):
                 remove_old_photo(character.photo)
                 character.photo = photo
 
-            voice = Voice.objects.get(id=voice_id)
             character.name = name
             character.profile = profile
             character.voice = voice

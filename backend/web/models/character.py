@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.conf import settings
 from django.utils.timezone import now, localtime
 
 from web.models.user import UserProfile
@@ -18,6 +19,7 @@ def background_image_update_to(instance,filename):
 class Voice(models.Model):
     name = models.CharField(max_length=100)
     voice_id = models.CharField(max_length=100)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     create_time = models.DateTimeField(default=now)
 
     def __str__(self):

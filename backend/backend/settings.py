@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,6 +30,17 @@ SECRET_KEY = "django-insecure-y5mfr*s&c-!^#=&+e%i7=smm^it_z@)!j3@z1%496h)-nmj3df
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'app7711.acapp.acwing.com.cn']
+
+# Public origin forwarding requests to this Django backend, used for voice enrollment downloads.
+VOICE_PUBLIC_BASE_URL = os.getenv('VOICE_PUBLIC_BASE_URL', '').strip().rstrip('/')
+VOICE_SAMPLE_ROOT = BASE_DIR / 'voice_samples'
+if VOICE_PUBLIC_BASE_URL:
+    try:
+        voice_host = urlsplit(VOICE_PUBLIC_BASE_URL).hostname
+    except ValueError:
+        voice_host = None
+    if voice_host and voice_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(voice_host)
 
 
 # Application definition

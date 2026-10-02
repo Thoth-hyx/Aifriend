@@ -45,6 +45,7 @@ const backgroundImageRef = useTemplateRef('background-image-ref')
 const errorMessage = ref('')
 
 async function handleUpdate(){
+  if (voiceRef.value.cloning) return
   const photo = photoRef.value.myPhoto
   const name = nameRef.value.myName?.trim()
   const voice = voiceRef.value.myVoice
@@ -94,6 +95,11 @@ async function handleUpdate(){
   }
 }
 
+function handleVoiceCreated(voice) {
+  voices.value = [...voices.value.filter(item => item.id !== voice.id), voice]
+  curVoiceId.value = voice.id
+}
+
 </script>
 
 <template>
@@ -103,14 +109,14 @@ async function handleUpdate(){
         <h3 class="text-lg font-bold my-4">更新角色</h3>
         <Photo ref="photo-ref" :photo="character.photo"/>
         <Name ref="name-ref" :name="character.name"/>
-        <Voice ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId"/>
+        <Voice ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId" @voiceCreated="handleVoiceCreated"/>
         <Profile ref="profile-ref" :profile="character.profile"/>
         <BackgroundImage ref="background-image-ref" :backgroundImage="character.background_image"/>
 
         <p v-if="errorMessage" class="text-sm text-red-500">{{errorMessage}}</p>
 
         <div class="flex justify-center">
-          <button @click="handleUpdate" class="btn btn-neutral w-60 mt-2">更新</button>
+          <button @click="handleUpdate" class="btn btn-neutral w-60 mt-2" :disabled="voiceRef?.cloning">更新</button>
         </div>
       </div>
     </div>

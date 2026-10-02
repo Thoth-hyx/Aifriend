@@ -11,3 +11,4 @@ backend/web/documents/lancedb_storage
 frontend/public/vad/
 .tmp/
 test/results/*/
+backend/voice_samples/

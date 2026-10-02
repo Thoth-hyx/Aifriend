@@ -17,5 +17,6 @@ def create_voice(voice_url,prefix):
             "url": voice_url,
         }
     }
-    response = requests.post(os.getenv("VOICE_URL"), headers=headers, json=data)
+    response = requests.post(os.getenv("VOICE_URL"), headers=headers, json=data, timeout=(5, 90))
+    response.raise_for_status()
     return response.json()
