@@ -40,7 +40,7 @@ class ChatGraph:
 
         llm = ChatOpenAI(
             **({'timeout': timeout, 'max_retries': 1} if timeout is not None else {}),
-            model="deepseek-v3.2",
+            model="deepseek-v4.1-flash",
             openai_api_key=os.getenv('API_KEY'),
             openai_api_base=os.getenv('API_BASE'),
             streaming=True,  # 流式输出
@@ -48,7 +48,7 @@ class ChatGraph:
             model_kwargs = {
                 "stream_options": {
                     "include_usage": True,  # 输出token消耗数量
-                }
+                },
             }
         ).bind_tools(tools)
 

@@ -136,7 +136,7 @@ class MessageChatView(APIView):
                     "task_group": "audio",
                     "task": "tts",
                     "function": "SpeechSynthesizer",
-                    "model": "cosyvoice-v3-flash",
+                    "model": "qwen-audio-3.0-tts-flash",
                     "parameters": {
                         "text_type": "PlainText",
                         "voice": voice_id,  # 音色
@@ -202,5 +202,5 @@ class MessageChatView(APIView):
             total_tokens=total_tokens,
         )
         yield 'data: [DONE]\n\n'  # SSE定义的
-        if Message.objects.filter(friend=friend).count() % 1 == 0:
+        if Message.objects.filter(friend=friend).count() % 10 == 0:
             update_memory(friend)

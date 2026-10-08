@@ -12,7 +12,7 @@ def create_voice(voice_url,prefix):
         "model": "voice-enrollment",
         "input": {
             "action": "create_voice",
-            "target_model": "cosyvoice-v3-flash",
+            "target_model": "qwen-audio-3.0-tts-flash",
             "prefix": prefix,
             "url": voice_url,
         }
