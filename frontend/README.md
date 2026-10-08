@@ -1,38 +1,42 @@
-# frontend
+# AIFriends 前端
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + Vite + Pinia，界面使用 Tailwind CSS 与 daisyUI。项目概览及后端配置见 [根目录 README](../README.md)。
 
-## Recommended IDE Setup
+## 开发与构建
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+在 `frontend/` 执行，需要 Node.js 20（≥20.19）或 ≥22.12：
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```powershell
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+访问 <http://localhost:5173>；Vite 将 `/api`、`/media`、`/static` 代理到 <http://127.0.0.1:8000>。
 
-```sh
+```powershell
 npm run build
+```
+
+构建输出到 `backend/static/frontend/`，之后可通过 Django 的 8000 端口访问。默认无需修改 API 地址；跨域部署时可用 `VITE_API_URL` 覆盖。
+
+## 语音输入资源
+
+首次安装后，在 `frontend/` 执行：
+
+```powershell
+New-Item -ItemType Directory -Force public/vad | Out-Null
+Copy-Item node_modules/@ricky0123/vad-web/dist/vad.worklet.bundle.min.js public/vad/
+Copy-Item node_modules/@ricky0123/vad-web/dist/*.onnx public/vad/
+Copy-Item node_modules/onnxruntime-web/dist/ort-wasm*.mjs public/vad/
+Copy-Item node_modules/onnxruntime-web/dist/ort-wasm*.wasm public/vad/
+```
+
+VAD 资源由 Vite 复制到构建产物，默认地址随开发/构建模式变化；`VITE_VAD_URL` 可选覆盖。浏览器需要麦克风权限，以及 localhost 或 HTTPS 环境。
+
+## 前端回归检查
+
+在项目根目录执行：
+
+```powershell
+node --test frontend/src/js/groupMessages.test.js frontend/src/stores/user.test.js test/test_reply_messages.mjs test/test_voice_upload.mjs
 ```
