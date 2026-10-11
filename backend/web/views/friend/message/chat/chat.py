@@ -136,7 +136,7 @@ class MessageChatView(APIView):
                     "task_group": "audio",
                     "task": "tts",
                     "function": "SpeechSynthesizer",
-                    "model": "qwen-audio-3.0-tts-flash",
+                    "model": "qwen-audio-3.1-tts-flash",
                     "parameters": {
                         "text_type": "PlainText",
                         "voice": voice_id,  # 音色
